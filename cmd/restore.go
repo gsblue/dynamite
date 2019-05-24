@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/SEEK-Jobs/dynamotools/restore"
+	"github.com/gsblue/dynamotools/restore"
 	"github.com/urfave/cli"
 )
 
