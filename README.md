@@ -1,3 +1,4 @@
+[![Build Status](https://travis-ci.org/gsblue/dynamotools.svg?branch=master)](https://travis-ci.org/gsblue/dynamotools)
 # Dynamodb Tools
 Tools to manage dynamo db
 
