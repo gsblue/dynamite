@@ -35,6 +35,10 @@ func BuildRestore() cli.Command {
 				Value: "",
 				Usage: "restore file in the bucket with json content",
 			},
+			cli.BoolFlag{
+				Name:  "local",
+				Usage: "tool runs against https://github.com/localstack/localstack",
+			},
 		},
 		SkipFlagParsing: false,
 		Before: func(c *cli.Context) error {
@@ -49,11 +53,12 @@ func BuildRestore() cli.Command {
 		},
 		Action: func(c *cli.Context) error {
 			return restore.ToDyanmo(&restore.DynamoResotreConfig{
-				Region:      c.String("region"),
-				TableName:   c.String("table"),
-				Workers:     c.Int("workers"),
-				Bucket:      c.String("bucket"),
-				RestoreFile: c.String("file"),
+				Region:          c.String("region"),
+				TableName:       c.String("table"),
+				Workers:         c.Int("workers"),
+				Bucket:          c.String("bucket"),
+				RestoreFile:     c.String("file"),
+				RunOnLocalStack: c.Bool("local"),
 			})
 
 		},

@@ -9,10 +9,16 @@ import (
 
 func main() {
 	app := cli.NewApp()
+	app.Usage = "tool to archive and restore dynamoDB tables"
+	app.Version = "0.0.1"
+	app.EnableBashCompletion = true
 	app.Commands = []cli.Command{
 		cmd.BuildArchive(),
 		cmd.BuildRestore(),
 	}
 
-	app.Run(os.Args)
+	err := app.Run(os.Args)
+	if err != nil {
+		panic(err)
+	}
 }
