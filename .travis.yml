@@ -3,8 +3,11 @@ language: go
 go:
   - 1.12.x
 
+#need fake aws credentials as verification is run against localstack
 env:
   - GO111MODULE=on
+  - AWS_ACCESS_KEY_ID=foobar
+  - AWS_SECRET_ACCESS_KEY=foobar
 
 services:
   - docker
