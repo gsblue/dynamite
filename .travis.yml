@@ -11,5 +11,6 @@ services:
 
 before_install:
   - docker run -d -p 4572:4572 -p 4569:4569 -e SERVICES=dynamodb,s3  localstack/localstack
+  - pip install --user awscli
 
 script: make build verify
