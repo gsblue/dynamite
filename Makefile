@@ -4,5 +4,7 @@ build: test
 test:
 	go test -v ./...
 
+verify:
+	./test/archive-test.sh
 
-.PHONY: test build
+.PHONY: test build verify
