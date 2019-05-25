@@ -27,7 +27,14 @@ function testArchive() {
     ./dynamotools archive -t MusicCollection2 -b /test -tf ./test/sample.so -local
 }
 
+function configureCredentials() {
+    export AWS_ACCESS_KEY_ID=foobar
+    export AWS_SECRET_ACCESS_KEY=foobar
+    export AWS_DEFAULT_REGION=ap-southeast-2
+}
+
 function run() {
+    configureCredentials
     createTable
     createBucket
     testArchive
