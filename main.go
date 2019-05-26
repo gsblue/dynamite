@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/gsblue/dynamotools/cmd"
+	"github.com/gsblue/dynamite/cmd"
 	"github.com/urfave/cli"
 )
 

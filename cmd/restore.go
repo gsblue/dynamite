@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/gsblue/dynamotools/restore"
+	"github.com/gsblue/dynamite/restore"
 	"github.com/urfave/cli"
 )
 

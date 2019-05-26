@@ -1,4 +1,4 @@
-module github.com/gsblue/dynamotools
+module github.com/gsblue/dynamite
 
 go 1.12
 

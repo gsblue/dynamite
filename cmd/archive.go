@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"plugin"
 
-	"github.com/gsblue/dynamotools/archive"
+	"github.com/gsblue/dynamite/archive"
 	"github.com/urfave/cli"
 )
 

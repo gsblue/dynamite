@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/gsblue/dynamotools.svg?branch=master)](https://travis-ci.org/gsblue/dynamotools)
-# DynamoDB Tools
-DynamoDB tools allows you:
+[![Build Status](https://travis-ci.org/gsblue/dynamite.svg?branch=master)](https://travis-ci.org/gsblue/dynamite)
+# Dynamite - tools for DynamoDB
+Dynamite allows you:
 - to archive `dyanamodb` table in an s3 bucket. 
 - restore data back into `dynamodb` from the s3 archive.
 
@@ -11,28 +11,28 @@ You can run the tool against [localstack](https://github.com/localstack/localsta
 
 ## Install
 ```
-go get -u github.com/gsblue/dynamotools
-go install github.com/gsblue/dynamotools
+go get -u github.com/gsblue/dynamite
+go install github.com/gsblue/dynamite
 ```
 ## Usage
 ```
-dynamotools [command] [options...]
+dynamite [command] [options...]
 ```
 
 ### Archive
 Archive does a parallel scan on a dynamodb table and uploads the data in chunks to a file in s3 bucket.
 
 ```bash
-dynamotools archive -help
+dynamite archive -help
 
 NAME:
-   dynamotools archive - region [aws region name] table [dynamo table name] tableindex [index to use for scanning] 
+   dynamite archive - region [aws region name] table [dynamo table name] tableindex [index to use for scanning] 
             partitions [scan partitions for parallel scanning] limit [limit for scanning no of records] 
             bucket [s3 bucket name] chunksize [chunk sizes (in MB) to be uploaded to the bucket] 
             concurrency [concurrency for uploads to the bucket]
 
 USAGE:
-   dynamotools archive [command options] [arguments...]
+   dynamite archive [command options] [arguments...]
 
 DESCRIPTION:
    archive scans the [table] using the specified [tableindex] and saves it the s3 [bucket]
@@ -61,10 +61,10 @@ Restore downloads the restore file from s3 bucket and puts the json data from th
 
 ```bash
 NAME:
-   dynamotools restore - region [aws region name] table [dynamo table name] bucket [s3 bucket name] file [restore file in the bucket]
+   dynamite restore - region [aws region name] table [dynamo table name] bucket [s3 bucket name] file [restore file in the bucket]
 
 USAGE:
-   dynamotools restore [command options] [arguments...]
+   dynamite restore [command options] [arguments...]
 
 DESCRIPTION:
    restore downaloads the [file] from the [bucket] and inserts the records into the [table]

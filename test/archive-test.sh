@@ -24,7 +24,7 @@ function verifyBucket() {
 
 function testArchive() {
     echo "test archive"
-    ./dynamotools archive -t MusicCollection2 -b /test -tf ./test/sample.so -local
+    ./dynamite archive -t MusicCollection2 -b /test -tf ./test/sample.so -local
 }
 
 function configureCredentials() {
