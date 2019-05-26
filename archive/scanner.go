@@ -18,9 +18,14 @@ type scanner interface {
 	Scan(writer io.WriteCloser) error
 }
 
+type Transformer interface {
+	Transform(input []map[string]interface{}) []map[string]interface{}
+}
+
 type parallelScanner struct {
 	db  dynamodbiface.DynamoDBAPI
 	cfg *scannerConfig
+	transformer Transformer
 }
 
 type scannerConfig struct {
@@ -40,8 +45,8 @@ func newScannerConfig(tableName, index string, partitions, limit int, filterAttr
 	}
 }
 
-func newParallelScanner(db dynamodbiface.DynamoDBAPI, cfg *scannerConfig) scanner {
-	return &parallelScanner{db, cfg}
+func newParallelScanner(db dynamodbiface.DynamoDBAPI, cfg *scannerConfig, t Transformer) scanner {
+	return &parallelScanner{db, cfg, t}
 }
 
 func (s *parallelScanner) Scan(writer io.WriteCloser) error {
@@ -62,6 +67,11 @@ func (s *parallelScanner) Scan(writer io.WriteCloser) error {
 					log.Printf("error %s whilst decoding items %v", err, items)
 				}
 				if decodedItems != nil {
+					//transform data if needed
+					if s.transformer != nil {
+						decodedItems = s.transformer.Transform(decodedItems)
+					}
+
 					if err := json.NewEncoder(writer).Encode(decodedItems); err != nil {
 						log.Printf("error %s whilst encoding items %v", err, items)
 					}
@@ -71,7 +81,7 @@ func (s *parallelScanner) Scan(writer io.WriteCloser) error {
 				log.Printf("error %s whilst scanning items from dynamo partion %d", err, partitionSegment)
 				return err
 			}
-			log.Println("finished processing partion no ", partitionSegment)
+			log.Println("finished processing partition no ", partitionSegment)
 			return nil
 		})
 	}

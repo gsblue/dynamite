@@ -14,35 +14,55 @@ import (
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 )
 
+const (
+	localDynamoDBEndpoint = "http://localhost:4569"
+	localS3Endpoint       = "http://localhost:4572"
+)
+
 // S3ArchiveConfig provides the configuration for archiving dynamo table to s3
 type S3ArchiveConfig struct {
-	Region            string
-	TableName         string
-	TableIndex        string
-	ScanPartitions    int
-	ScanLimit         int
-	ScanFilterName    string
-	ScanFilterValue   string
-	ScanFilterType    string
-	ScanFilterOpertor string
-	UploadBucket      string
-	UploadChunkSize   int64
-	UploadConcurrency int
-	BackupPrefix      string
+	Region             string
+	TableName          string
+	TableIndex         string
+	ScanPartitions     int
+	ScanLimit          int
+	ScanFilterName     string
+	ScanFilterValue    string
+	ScanFilterType     string
+	ScanFilterOperator string
+	UploadBucket       string
+	UploadChunkSize    int64
+	UploadConcurrency  int
+	BackupPrefix       string
+	Transformer        Transformer
+	RunOnLocalStack    bool
 }
 
-// ToS3 archives the dyanamo table to a file in s3 bucket
+// ToS3 archives the dynamo table to a file in s3 bucket
 func ToS3(c *S3ArchiveConfig) error {
-	s := getNewAwsSession(c.Region)
+	var dynamoEndpoint, s3Endpoint string
+	if c.RunOnLocalStack {
+		dynamoEndpoint = localDynamoDBEndpoint
+		s3Endpoint = localS3Endpoint
+	}
 
-	db := dynamodb.New(s)
+	dynamoSession, err := getNewAwsSession(c.Region, dynamoEndpoint)
+	if err != nil {
+		return err
+	}
+	s3Session, err := getNewAwsSession(c.Region, s3Endpoint)
+	if err != nil {
+		return err
+	}
+
+	db := dynamodb.New(dynamoSession)
 
 	sc := newParallelScanner(db, newScannerConfig(c.TableName, c.TableIndex, c.ScanPartitions, c.ScanLimit,
-		c.ScanFilterName, c.ScanFilterType, c.ScanFilterOpertor, c.ScanFilterValue))
+		c.ScanFilterName, c.ScanFilterType, c.ScanFilterOperator, c.ScanFilterValue), c.Transformer)
 
 	r, w := io.Pipe()
 
-	u := s3manager.NewUploader(s, func(ul *s3manager.Uploader) {
+	u := s3manager.NewUploader(s3Session, func(ul *s3manager.Uploader) {
 		ul.PartSize = c.UploadChunkSize * 1024 * 1024 //MB
 		ul.Concurrency = c.UploadConcurrency
 	})
@@ -57,7 +77,7 @@ func ToS3(c *S3ArchiveConfig) error {
 	key := generateBackupFileName(c.BackupPrefix, c.TableName)
 	log.Printf("backing up data in %s", key)
 
-	_, err := u.Upload(&s3manager.UploadInput{
+	_, err = u.Upload(&s3manager.UploadInput{
 		Bucket:      &c.UploadBucket,
 		Key:         aws.String(key),
 		Body:        r,
@@ -79,8 +99,8 @@ func generateBackupFileName(prefix, fileName string) string {
 	return fmt.Sprintf("%s/%s.json", time.Now().Format("2006-01-02"), fileName)
 }
 
-func getNewAwsSession(region string) *session.Session {
-	awsconfig := defaults.Config().WithRegion(region) //.WithLogLevel(aws.LogDebugWithRequestErrors)
+func getNewAwsSession(region, endpoint string) (*session.Session, error) {
+	awsconfig := defaults.Config().WithRegion(region).WithEndpoint(endpoint) //.WithLogLevel(aws.LogDebugWithRequestErrors)
 	awsconfig.Credentials = defaults.CredChain(awsconfig, defaults.Handlers())
-	return session.New(awsconfig)
+	return session.NewSession(awsconfig)
 }

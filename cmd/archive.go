@@ -1,6 +1,10 @@
 package cmd
 
 import (
+	"errors"
+	"fmt"
+	"plugin"
+
 	"github.com/gsblue/dynamotools/archive"
 	"github.com/urfave/cli"
 )
@@ -72,6 +76,14 @@ func BuildArchive() cli.Command {
 				Name:  "prefix, pf",
 				Usage: "folder where archived data will be stored (optional)",
 			},
+			cli.StringFlag{
+				Name:  "transform, tf",
+				Usage: "`.so` plugin file path for archive data transformation",
+			},
+			cli.BoolFlag{
+				Name:  "local",
+				Usage: "tool runs against https://github.com/localstack/localstack",
+			},
 		},
 		SkipFlagParsing: false,
 		Before: func(c *cli.Context) error {
@@ -83,22 +95,49 @@ func BuildArchive() cli.Command {
 			return nil
 		},
 		Action: func(c *cli.Context) error {
+			var transformer archive.Transformer
+			if c.String("transform") != "" {
+				var err error
+				transformer, err = parseTransformPlugin(c.String("transform"))
+				if err != nil {
+					return cli.NewExitError(fmt.Sprintf("failed loading tranformation plugin: %s", err), 86)
+				}
+			}
 			return archive.ToS3(&archive.S3ArchiveConfig{
-				Region:            c.String("region"),
-				TableName:         c.String("table"),
-				TableIndex:        c.String("tableindex"),
-				ScanPartitions:    c.Int("partitions"),
-				ScanLimit:         c.Int("limit"),
-				ScanFilterName:    c.String("filtername"),
-				ScanFilterType:    c.String("filtertype"),
-				ScanFilterOpertor: c.String("filteroperator"),
-				ScanFilterValue:   c.String("filtervalue"),
-				UploadBucket:      c.String("bucket"),
-				UploadChunkSize:   c.Int64("chunksize"),
-				UploadConcurrency: c.Int("concurrency"),
-				BackupPrefix:      c.String("prefix"),
+				Region:             c.String("region"),
+				TableName:          c.String("table"),
+				TableIndex:         c.String("tableindex"),
+				ScanPartitions:     c.Int("partitions"),
+				ScanLimit:          c.Int("limit"),
+				ScanFilterName:     c.String("filtername"),
+				ScanFilterType:     c.String("filtertype"),
+				ScanFilterOperator: c.String("filteroperator"),
+				ScanFilterValue:    c.String("filtervalue"),
+				UploadBucket:       c.String("bucket"),
+				UploadChunkSize:    c.Int64("chunksize"),
+				UploadConcurrency:  c.Int("concurrency"),
+				BackupPrefix:       c.String("prefix"),
+				Transformer:        transformer,
+				RunOnLocalStack:    c.Bool("local"),
 			})
 
 		},
 	}
+}
+
+func parseTransformPlugin(path string) (archive.Transformer, error) {
+	tfPlugin, err := plugin.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	symTransformer, err := tfPlugin.Lookup("Transformer")
+	if err != nil {
+		return nil, err
+	}
+
+	transformer, ok := symTransformer.(archive.Transformer)
+	if !ok {
+		return nil, errors.New("plugin does not implement the interface `Transform(input []map[string]interface{}) []map[string]interface{}`")
+	}
+	return transformer, nil
 }

@@ -32,7 +32,10 @@ func (bw *batchWriter) writeBatch(requestsChan chan []*dynamodb.WriteRequest, de
 			queueWrites := make(chan []*dynamodb.WriteRequest, 1)
 			queueWrites <- resp.UnprocessedItems[bw.table]
 			close(queueWrites)
-			bw.writeBatch(queueWrites, 2*delay)
+			err := bw.writeBatch(queueWrites, 2*delay)
+			if err != nil {
+				return err
+			}
 		}
 
 		if err != nil {

@@ -1,6 +1,13 @@
 [![Build Status](https://travis-ci.org/gsblue/dynamotools.svg?branch=master)](https://travis-ci.org/gsblue/dynamotools)
-# Dynamodb Tools
-Tools to manage dynamo db
+# DynamoDB Tools
+DynamoDB tools allows you:
+- to archive `dyanamodb` table in an s3 bucket. 
+- restore data back into `dynamodb` from the s3 archive.
+
+You can optionally transform the data before archiving in the bucket.
+ 
+
+You can run the tool against [localstack](https://github.com/localstack/localstack) by using `local` flag.
 
 ## Install
 ```
@@ -15,13 +22,13 @@ dynamotools [command] [options...]
 ### Archive
 Archive does a parallel scan on a dynamodb table and uploads the data in chunks to a file in s3 bucket.
 
-```
+```bash
 dynamotools archive -help
 
 NAME:
-   dynamotools archive - region [aws region name] table [dynamo table name] tableindex [index to use for scanning]
-            partitions [scan partitions for parallel scanning] limit [limit for scanning no of records]
-            bucket [s3 bucket name] chunksize [chunk sizes (in MB) to be uploaded to the bucket]
+   dynamotools archive - region [aws region name] table [dynamo table name] tableindex [index to use for scanning] 
+            partitions [scan partitions for parallel scanning] limit [limit for scanning no of records] 
+            bucket [s3 bucket name] chunksize [chunk sizes (in MB) to be uploaded to the bucket] 
             concurrency [concurrency for uploads to the bucket]
 
 USAGE:
@@ -44,12 +51,15 @@ OPTIONS:
    --chunksize value, --cs value       chunk sizes (in MB) to be uploaded to the bucket (default: 16)
    --concurrency value, --uc value     concurrency for uploads to the bucket (default: 10)
    --prefix value, --pf value          folder where archived data will be stored (optional)
+   --transform .so, --tf .so           .so plugin file path for archive data transformation
+   --local                             tool runs against https://github.com/localstack/localstack
+
 ```
 
 ### Restore
 Restore downloads the restore file from s3 bucket and puts the json data from the file into dynamodb.
 
-```
+```bash
 NAME:
    dynamotools restore - region [aws region name] table [dynamo table name] bucket [s3 bucket name] file [restore file in the bucket]
 
@@ -60,9 +70,11 @@ DESCRIPTION:
    restore downaloads the [file] from the [bucket] and inserts the records into the [table]
 
 OPTIONS:
-   --region value, -r value  aws region name where your dynamodb table and s3 bucket is (default: "ap-southeast-2")
-   --table value, -t value   dynamodb table name
-   --bucket value, -b value  name of the bucket to store the archived data
+   --region value, -r value   aws region name where your dynamodb table and s3 bucket is (default: "ap-southeast-2")
+   --table value, -t value    dynamodb table name
    --workers value, -w value  number of parallel workers putting data in dynamodb table (default: 1)
-   --file value, -f value    restore file in the bucket with json content
+   --bucket value, -b value   name of the bucket to store the archived data
+   --file value, -f value     restore file in the bucket with json content
+   --local                    tool runs against https://github.com/localstack/localstack
+
 ```

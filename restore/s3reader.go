@@ -17,19 +17,38 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const (
+	localDynamoDBEndpoint = "http://localhost:4569"
+	localS3Endpoint       = "http://localhost:4572"
+)
+
 // DynamoResotreConfig provides the configuration for archiving dynamo table to s3
 type DynamoResotreConfig struct {
-	Region      string
-	TableName   string
-	Workers     int
-	Bucket      string
-	RestoreFile string
+	Region          string
+	TableName       string
+	Workers         int
+	Bucket          string
+	RestoreFile     string
+	RunOnLocalStack bool
 }
 
 // ToDyanmo restores the data from the file in the s3 bucket to the specified dynamo table
 func ToDyanmo(c *DynamoResotreConfig) error {
-	s := getNewAwsSession(c.Region)
-	dl := s3manager.NewDownloader(s)
+	var dynamoEndpoint, s3Endpoint string
+	if c.RunOnLocalStack {
+		dynamoEndpoint = localDynamoDBEndpoint
+		s3Endpoint = localS3Endpoint
+	}
+
+	dynamoSession, err := getNewAwsSession(c.Region, dynamoEndpoint)
+	if err != nil {
+		return err
+	}
+	s3Session, err := getNewAwsSession(c.Region, s3Endpoint)
+	if err != nil {
+		return err
+	}
+	dl := s3manager.NewDownloader(s3Session)
 
 	localFile := fmt.Sprintf("restore-file-%s", time.Now().Format("2006-01-02"))
 	file, err := os.Create(localFile)
@@ -50,7 +69,7 @@ func ToDyanmo(c *DynamoResotreConfig) error {
 		return err
 	}
 
-	file.Seek(0, 0)
+	_, _ = file.Seek(0, 0)
 	dec := json.NewDecoder(file)
 	itemsChan := make(chan map[string]interface{})
 
@@ -61,7 +80,7 @@ func ToDyanmo(c *DynamoResotreConfig) error {
 	log.Println("workers ", c.Workers)
 	for index := 0; index < c.Workers; index++ {
 		grp.Go(func() error {
-			return NewDynamoBatchWriter(dynamodb.New(s), c.TableName).Write(itemsChan)
+			return NewDynamoBatchWriter(dynamodb.New(dynamoSession), c.TableName).Write(itemsChan)
 		})
 	}
 	stop := false
@@ -97,8 +116,8 @@ func ToDyanmo(c *DynamoResotreConfig) error {
 	return nil
 }
 
-func getNewAwsSession(region string) *session.Session {
-	awsconfig := defaults.Config().WithRegion(region) //.WithLogLevel(aws.LogDebug)
+func getNewAwsSession(region, endpoint string) (*session.Session, error) {
+	awsconfig := defaults.Config().WithRegion(region).WithEndpoint(endpoint) //.WithLogLevel(aws.LogDebugWithRequestErrors)
 	awsconfig.Credentials = defaults.CredChain(awsconfig, defaults.Handlers())
-	return session.New(awsconfig)
+	return session.NewSession(awsconfig)
 }
