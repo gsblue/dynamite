@@ -7,4 +7,6 @@ test:
 verify:
 	./test/archive-test.sh
 
+plugin:
+    go build
 .PHONY: test build verify
