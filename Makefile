@@ -8,6 +8,6 @@ verify: plugin
 	./test/archive-test.sh
 
 plugin:
-    go build -buildmode=plugin -o ./test/sample.so ./plugin/sample.go
+	go build -buildmode=plugin -o ./test/sample.so ./plugin/sample.go
 
 .PHONY: test build verify plugin
