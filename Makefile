@@ -4,9 +4,10 @@ build: test
 test:
 	go test -v ./...
 
-verify:
+verify: plugin
 	./test/archive-test.sh
 
 plugin:
-    go build
-.PHONY: test build verify
+    go build -buildmode=plugin -o ./test/sample.so ./plugin/sample.go
+
+.PHONY: test build verify plugin
